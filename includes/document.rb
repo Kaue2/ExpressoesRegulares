@@ -20,16 +20,21 @@ class Document
     def search(flag)
         case flag
         when "d"
-            data_regex = Regexp.new("(?<dia>[0-9]{2})((?<barra>\/[0-9]{1,2}(\/[0-9]{4})?)|( de (?<mes>janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)( de (?<ano>20(21|22|23|24|25)))?))", Regexp::IGNORECASE)
+            data_regex = Regexp.new("(?<day>[0-9]{2})((?<slash>\/[0-9]{1,2}(\/[0-9]{4})?)|( de (?<month>janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)( de (?<year>20(21|22|23|24|25)))?))", Regexp::IGNORECASE)
             dates = []
             groups = []
             File.open(@path, "r") do |archive| # abrindo o arquivo novamente
-                archive.each_line.with_index do |line| # para cada linha do arquivo
+                archive.each_line.with_index do |line, index| # para cada linha do arquivo
                     line.scan(data_regex) do |match| # para cada item que foi correspondido
                         groups = Regexp.last_match.named_captures
                         date = Regexp.last_match[0] # pego o item inteiro e o armazeno no array
                         dates << date
-                        validate_dates(date, groups)
+                        valid = validate_dates(date, groups)
+                        if valid 
+                            puts "Era válido #{date}"
+                        else
+                            puts "Na linha #{index + 1}, a data #{date} está incorreta"
+                        end
                     end
                 end
             end
@@ -52,10 +57,58 @@ class Document
         end
     end
 
+    # kaue
+    # params: recebe a data a ser validada e o grupo do regex a qual ela pertence
+    # função para validação dos dias, meses e anos
+    # return: verdadeiro caso sejá uma data válida, falso caso seja inválida
     def validate_dates(date, groups)
-        if groups['barra']
+        day = ''
+        month = ''
+        year = ''
+
+        if groups['slash']
             sub_string = date.split('/')
-        elsif groups['mes']
+            puts "#{sub_string}"
+
+            if sub_string.size != 2 && sub_string.size != 3
+                return false
+            end
+
+            day = sub_string[0]
+            month = sub_string[1]
+            year = sub_string[2] if sub_string.size == 3
+
+            unless (1..12).cover?(month.to_i)
+                return false
+            end
+
+        elsif groups['month']
+            months = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+            sub_string = date.split(' ')
+            puts "#{sub_string}"
+
+            day = sub_string[0]
+            month = sub_string[2]
+
+            if sub_string.size == 5
+                year = sub_string[4]
+            end
+
+            if !months.include?(month.downcase)
+                return false 
+            end
         end
+
+        unless (1..31).cover?(day.to_i)
+            return false
+        end
+        if  year && !year.empty?
+            year = year.to_i
+            unless (1900..2100).cover?(year)
+                return false
+            end
+        end
+
+        true
     end
 end
