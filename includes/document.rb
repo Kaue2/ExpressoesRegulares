@@ -22,14 +22,14 @@ class Document
         when "d"
             data_regex = Regexp.new("(?<dia>[0-9]{2})((?<barra>\/[0-9]{1,2}(\/[0-9]{4})?)|( de (?<mes>janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)( de (?<ano>20(21|22|23|24|25)))?))", Regexp::IGNORECASE)
             dates = []
-            grupos = []
+            groups = []
             File.open(@path, "r") do |archive| # abrindo o arquivo novamente
                 archive.each_line.with_index do |line| # para cada linha do arquivo
                     line.scan(data_regex) do |match| # para cada item que foi correspondido
-                        grupos = Regexp.last_match.named_captures
-                        dates << Regexp.last_match[0] # pego o item inteiro e o armazeno no array
-                        puts Regexp.last_match[1]
-                        puts grupos
+                        groups = Regexp.last_match.named_captures
+                        date = Regexp.last_match[0] # pego o item inteiro e o armazeno no array
+                        dates << date
+                        validate_dates(date, groups)
                     end
                 end
             end
@@ -49,6 +49,13 @@ class Document
             
         when "p"
             
+        end
+    end
+
+    def validate_dates(date, groups)
+        if groups['barra']
+            sub_string = date.split('/')
+        elsif groups['mes']
         end
     end
 end
