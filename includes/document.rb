@@ -28,13 +28,14 @@ class Document
                     line.scan(data_regex) do |match| # para cada item que foi correspondido
                         groups = Regexp.last_match.named_captures
                         date = Regexp.last_match[0] # pego o item inteiro e o armazeno no array
-                        dates << date
                         valid = validate_dates(date, groups)
                         if valid 
+                            dates << date
                             puts "Era válido #{date}"
                         else
                             puts "Na linha #{index + 1}, a data #{date} está incorreta"
                         end
+                        return dates
                     end
                 end
             end
@@ -43,7 +44,20 @@ class Document
             # caso não ocorra nenhum erro de validação prosseguimos
             puts "#{dates}"
         when "h"
-            
+            hour_regex = Regexp.new("(às)?\ ?(?<hour>[0-9]{1,2}):?\ ?(?<minutes>[0-9]{2})?\ ?((hora)(s)?)?", Regexp::IGNORECASE)
+            hours = []
+            groups = []
+            groups
+            File.open(@path, "r") do |archive|
+                archive.each_line.with_index do |line, index|
+                    line.scan(hour_regex) do |match|
+                        hour = Regexp.last_match[0]
+                        groups = Regexp.last_match.named_captures
+                        hours << hour
+                    end
+                end
+            end
+            puts "#{hours}"
         when "t"
             
         when "u"
