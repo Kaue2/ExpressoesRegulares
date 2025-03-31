@@ -11,7 +11,19 @@ class Document
         File.open(@path, "r") do |archive|
             @content = archive.read
         end
+        File.write(OUTPUT, "")
     end
+
+    #regex constants
+    OUTPUT = "output.txt"
+    REGEX_DATE = '(?<day>[0-9]{2})((?<slash>\/[0-9]{1,2}(\/[0-9]{4})?)|( de (?<month>janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)( de (?<year>20(21|22|23|24|25)))?))'
+    REGEX_HOUR = '(([0-9]{1,2})(:|\ )(([0-9]{2})|(horas|hora)))|(às\ )([0-9]{2})'
+    REGEX_TAGS = '(?<![\/\w])#[\p{L}\d_]+'
+    REGEX_URL = '(https?|ftp)://(www\.)?[a-z0-9\-]+(\.[a-z]{2,})+(/[^\s]*)?(\?[^\s]*)?(\#[^\s]*)?'
+    REGEX_EMAIL = '\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}\b'
+    REGEX_ACTION = '\b[a-zA-Z]+(ar|er|ir)\b'
+    REGEX_PERSON = '\b(([aAoO])|(com))( [a-zA-Z]+)\b'
+    
     # kaue
     # params flag, char
     # a função a seguir deve receber uma flag para fazer a busca corretamente
@@ -20,9 +32,10 @@ class Document
     def search(flag)
         case flag
         when "d"
-            data_regex = Regexp.new("(?<day>[0-9]{2})((?<slash>\/[0-9]{1,2}(\/[0-9]{4})?)|( de (?<month>janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)( de (?<year>20(21|22|23|24|25)))?))", Regexp::IGNORECASE)
+            data_regex = Regexp.new(REGEX_DATE, Regexp::IGNORECASE)
             dates = []
             groups = []
+            warning = ""
             File.open(@path, "r") do |archive| # abrindo o arquivo novamente
                 archive.each_line.with_index do |line, index| # para cada linha do arquivo
                     line.scan(data_regex) do |match| # para cada item que foi correspondido
@@ -31,43 +44,89 @@ class Document
                         valid = validate_dates(date, groups)
                         if valid 
                             dates << date
-                            puts "Era válido #{date}"
                         else
-                            puts "Na linha #{index + 1}, a data #{date} está incorreta"
+                            warning += "Na linha #{index + 1}, a data #{date} está incorreta\n"
                         end
-                        return dates
                     end
                 end
             end
-            # implementar a verificação de datas aqui
-            # caso uma data seja reconhecida porém seja inválida devemos informar isso ao usuário
-            # caso não ocorra nenhum erro de validação prosseguimos
-            puts "#{dates}"
+            if warning != ""
+                File.write(OUTPUT, "Avisos\n" + warning + "\n")
+            end
+            File.write(OUTPUT, "Output\n", mode: "a")
+            File.write(OUTPUT, dates, mode: "a")
         when "h"
-            hour_regex = Regexp.new("(às)?\ ?(?<hour>[0-9]{1,2}):?\ ?(?<minutes>[0-9]{2})?\ ?((hora)(s)?)?", Regexp::IGNORECASE)
+            hour_regex = Regexp.new(REGEX_HOUR, Regexp::IGNORECASE)
             hours = []
-            groups = []
-            groups
             File.open(@path, "r") do |archive|
-                archive.each_line.with_index do |line, index|
+                archive.each_line.with_index do |line|
                     line.scan(hour_regex) do |match|
                         hour = Regexp.last_match[0]
-                        groups = Regexp.last_match.named_captures
                         hours << hour
                     end
                 end
             end
-            puts "#{hours}"
+            File.write(OUTPUT, hours, mode: "a")
         when "t"
-            
+            tags_regex = Regexp.new(REGEX_TAGS)
+            tags = []
+            File.open(@path, "r") do |archive|
+                archive.each_line.with_index do |line|
+                    line.scan(tags_regex) do |match|
+                        tag = Regexp.last_match[0]
+                        tags << tag
+                    end
+                end
+            end
+            File.write(OUTPUT, tags)
         when "u"
-            
+            url_regex = Regexp.new(REGEX_URL)
+            urls = []
+            File.open(@path, "r") do |archive|
+                archive.each_line.with_index do |line|
+                    line.scan(url_regex) do |match|
+                        url = Regexp.last_match[0]
+                        urls << url
+                    end
+                end
+            end
+            File.write(OUTPUT, urls)
         when "e"
-            
+            email_regex = Regexp.new(REGEX_EMAIL)
+            emails = []
+            File.open(@path, "r") do |archive|
+                archive.each_line.with_index do |line|
+                    line.scan(email_regex) do |match|
+                        email = Regexp.last_match[0]
+                        emails << email
+                    end
+                end
+            end
+            File.write(OUTPUT, emails)
         when "a"
-            
+            action_regex = Regexp.new(REGEX_ACTION)
+            actions = []
+            File.open(@path, "r") do |archive|
+                archive.each_line.with_index do |line|
+                    line.scan(action_regex) do |match|
+                        action = Regexp.last_match[0]
+                        actions << action
+                    end
+                end
+            end
+            File.write(OUTPUT, actions)
         when "p"
-            
+            person_regex = Regexp.new(REGEX_PERSON)
+            people = []
+            File.open(@path, "r") do |archive|
+                archive.each_line.with_index do |line|
+                    line.scan(person_regex) do |match|
+                        person = Regexp.last_match[0]
+                        people << person
+                    end
+                end
+            end
+            File.write(OUTPUT, people)
         end
     end
 
@@ -82,7 +141,6 @@ class Document
 
         if groups['slash']
             sub_string = date.split('/')
-            puts "#{sub_string}"
 
             if sub_string.size != 2 && sub_string.size != 3
                 return false
@@ -99,7 +157,6 @@ class Document
         elsif groups['month']
             months = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
             sub_string = date.split(' ')
-            puts "#{sub_string}"
 
             day = sub_string[0]
             month = sub_string[2]
