@@ -1,3 +1,5 @@
+require_relative './task.rb'
+
 class Document
     # kaue
     # inicializa o objeto documento
@@ -25,11 +27,12 @@ class Document
     REGEX_PERSON = '\b(([aAoO])|(com))( [a-zA-Z]+)\b'
     
     # kaue
-    # params flag, char
+    # params char flag e um boolean g
     # a função a seguir deve receber uma flag para fazer a busca corretamente
+    # a função espera um boleano para saber se gera ou não um arquivo output
     # sera retornado um arrau com as strings correspondes a flag
     # retorno array de string
-    def search(flag)
+    def search(flag, g)
         case flag
         when "d"
             data_regex = Regexp.new(REGEX_DATE, Regexp::IGNORECASE)
@@ -53,8 +56,11 @@ class Document
             if warning != ""
                 File.write(OUTPUT, "Avisos\n" + warning + "\n")
             end
-            File.write(OUTPUT, "Output\n", mode: "a")
-            File.write(OUTPUT, dates, mode: "a")
+            if g == true
+                File.write(OUTPUT, "Output\n", mode: "a")
+                File.write(OUTPUT, dates, mode: "a")
+            end
+            return dates
         when "h"
             hour_regex = Regexp.new(REGEX_HOUR, Regexp::IGNORECASE)
             hours = []
@@ -66,7 +72,10 @@ class Document
                     end
                 end
             end
-            File.write(OUTPUT, hours, mode: "a")
+            if g == true
+                File.write(OUTPUT, hours, mode: "a")
+            end
+            return hours
         when "t"
             tags_regex = Regexp.new(REGEX_TAGS)
             tags = []
@@ -78,7 +87,10 @@ class Document
                     end
                 end
             end
-            File.write(OUTPUT, tags)
+            if g == true
+                File.write(OUTPUT, tags)
+            end
+            return tags
         when "u"
             url_regex = Regexp.new(REGEX_URL)
             urls = []
@@ -90,7 +102,10 @@ class Document
                     end
                 end
             end
-            File.write(OUTPUT, urls)
+            if g == true 
+                File.write(OUTPUT, urls)
+            end
+            return urls
         when "e"
             email_regex = Regexp.new(REGEX_EMAIL)
             emails = []
@@ -102,7 +117,10 @@ class Document
                     end
                 end
             end
-            File.write(OUTPUT, emails)
+            if g == true 
+                File.write(OUTPUT, emails)
+            end
+            return emails
         when "a"
             action_regex = Regexp.new(REGEX_ACTION)
             actions = []
@@ -114,7 +132,10 @@ class Document
                     end
                 end
             end
-            File.write(OUTPUT, actions)
+            if g == true
+                File.write(OUTPUT, actions)
+            end
+            return actions
         when "p"
             person_regex = Regexp.new(REGEX_PERSON)
             people = []
@@ -126,8 +147,49 @@ class Document
                     end
                 end
             end
-            File.write(OUTPUT, people)
+            if g == true
+                File.write(OUTPUT, people)
+            end
+            return people
         end
+    end
+
+    def generate_tasks()
+        query = [
+            Regexp.new(REGEX_DATE, Regexp::IGNORECASE), 
+            Regexp.new(REGEX_HOUR, Regexp::IGNORECASE), 
+            Regexp.new(REGEX_TAGS), 
+            Regexp.new(REGEX_URL),
+            Regexp.new(REGEX_EMAIL), 
+            Regexp.new(REGEX_ACTION),
+            Regexp.new(REGEX_PERSON)
+        ]
+        dates = search('d', false)
+        hours = search('h', false)
+        tags = search('t', false)
+        urls = search('u', false)
+        emails = search('e', false)
+        actions = search('a', false)
+        people = search('p', false)
+        arrays = [dates, hours, tags, actions, people]
+        tasks = []
+
+        unless arrays.map(&:size).uniq.size == 1
+            puts "Nem todos os atributos para montar uma tarefa tem o mesmo tamanho"
+            return
+        end
+
+        arrays[0].length.times do |i|
+            values = arrays.map { |arr| arr[i] }
+            t = Task.new(values[0], values[1], values[2], values[3], values[4])
+            tasks << t
+        end
+        
+        tasks.each do |t|
+            File.write(OUTPUT, t.text, mode: "a")
+        end
+
+
     end
 
     # kaue
